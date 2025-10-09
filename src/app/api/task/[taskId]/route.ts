@@ -1,13 +1,12 @@
-// src/app/api/tasks/[taskId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth'; // <-- Importación del helper de autenticación
+import { auth } from '@/lib/auth';
 
 interface Params {
   params: { taskId: string };
 }
 
-// Helper para verificar si la tarea pertenece al usuario
+// Para verificar si la tarea pertenece al usuario
 async function checkTaskOwnership(taskId: string, userId: string) {
     const task = await prisma.task.findUnique({
         where: { id: taskId, user_id: userId },
@@ -15,7 +14,7 @@ async function checkTaskOwnership(taskId: string, userId: string) {
     return task;
 }
 
-// Manejador para PATCH/PUT: Actualizar tarea (incluye mover en matriz - RF5)
+// Actualizar tarea (incluye mover en matriz - RF5)
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -35,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
       data: {
-        ...body, // Permite actualizar cualquier campo del body
+        ...body, // Permite actualizar cualquier campo
         due_date: body.due_date ? new Date(body.due_date) : undefined,
         updated_at: new Date(),
       },
@@ -48,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-// Manejador para DELETE: Eliminar tarea (CRUD)
+// Eliminar tarea (CRUD)
 export async function DELETE(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -58,7 +57,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { taskId } = params;
 
   try {
-    // 1. Verificar propiedad de la tarea (usando `delete` con filtro de user_id)
+    // 1. Verificar propiedad de la tarea
     const result = await prisma.task.deleteMany({
       where: { id: taskId, user_id: userId },
     });

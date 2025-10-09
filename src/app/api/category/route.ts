@@ -1,9 +1,8 @@
-// src/app/api/categories/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth'; // <-- Importación del helper de autenticación
+import { auth } from '@/lib/auth';
 
-// Manejador para GET: Obtener todas las categorías
+// Obtener todas las categorías
 export async function GET() {
   const session = await auth(); 
   
@@ -16,7 +15,7 @@ export async function GET() {
   try {
     const categories = await prisma.category.findMany({
       where: {
-        user_id: userId, // <-- Filtrar por el ID del usuario autenticado
+        user_id: userId, // Filtrar por ID
       },
       orderBy: { name: 'asc' },
     });
@@ -28,7 +27,7 @@ export async function GET() {
   }
 }
 
-// Manejador para POST: Crear una nueva categoría (RF3)
+// Crear una nueva categoría (RF3)
 export async function POST(req: NextRequest) {
   const session = await auth(); 
   
@@ -50,7 +49,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         color: color || undefined,
-        user_id: userId, // <-- Asignar el ID del usuario autenticado
+        user_id: userId, // Asignar el ID del usuario
       },
     });
 
