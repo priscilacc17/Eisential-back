@@ -1,13 +1,12 @@
-// src/app/api/tasks/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth'; // <-- Importación del helper de autenticación
+import { auth } from '@/lib/auth';
 
-// Manejador para GET: Obtener todas las tareas (Backlog)
+// Obtener todas las tareas (Backlog)
 export async function GET() {
-  const session = await auth(); // Obtener la sesión
+  const session = await auth(); // Obtener esión
   
-  if (!session?.user?.id) { // Verificar la sesión
+  if (!session?.user?.id) { // Verificar sesión
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   
@@ -16,7 +15,7 @@ export async function GET() {
   try {
     const tasks = await prisma.task.findMany({
       where: {
-        user_id: userId, // <-- Filtrar por el ID del usuario autenticado
+        user_id: userId, // Filtrar por ID
       },
       orderBy: { created_at: 'desc' },
       include: { category: true },
@@ -29,11 +28,11 @@ export async function GET() {
   }
 }
 
-// Manejador para POST: Crear una nueva tarea (RF2)
+// Crear una nueva tarea (RF2)
 export async function POST(req: NextRequest) {
-  const session = await auth(); // Obtener la sesión
+  const session = await auth(); // Obtener sesión
   
-  if (!session?.user?.id) { // Verificar la sesión
+  if (!session?.user?.id) { // Verificar sesión
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
         title,
         description,
         due_date: due_date ? new Date(due_date) : null,
-        user_id: userId, // <-- Asignar el ID del usuario autenticado
+        user_id: userId, // Asignar el ID del usuario
         category_id: category_id || undefined,
         quadrant: quadrant || 'B',
         position: position || 0,
