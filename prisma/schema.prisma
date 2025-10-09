@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model account {
+  id                  String  @id @db.VarChar(36)
+  user_id             String? @db.VarChar(36)
+  type                String? @db.VarChar(50)
+  provider            String? @db.VarChar(50)
+  provider_account_id String? @unique @db.VarChar(255)
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String? @db.VarChar(50)
+  scope               String? @db.VarChar(255)
+  id_token            String?
+  session_state       String? @db.VarChar(255)
+  user                user?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model category {
+  id         String    @id @db.VarChar(36)
+  name       String    @db.VarChar(100)
+  color      String?   @default("#60B1F7") @db.VarChar(7)
+  user_id    String?   @db.VarChar(36)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  user       user?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  task       task[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notification {
+  id                        String                      @id @db.VarChar(36)
+  task_id                   String?                     @db.VarChar(36)
+  type                      String?                     @db.VarChar(2)
+  send_at                   DateTime                    @db.Timestamp(6)
+  title                     String                      @db.VarChar(255)
+  message                   String
+  read                      Boolean?                    @default(false)
+  read_at                   DateTime?                   @db.Timestamp(6)
+  created_at                DateTime?                   @default(now()) @db.Timestamp(6)
+  task                      task?                       @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notification_delivery_log notification_delivery_log[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notification_delivery_log {
+  id                String             @id @db.VarChar(36)
+  notification_id   String?            @db.VarChar(36)
+  subscription_id   String?            @db.VarChar(36)
+  delivery_channel  String?            @db.VarChar(3)
+  status            String?            @db.VarChar(2)
+  error_message     String?
+  sent_at           DateTime?          @db.Timestamp(6)
+  delivered_at      DateTime?          @db.Timestamp(6)
+  clicked_at        DateTime?          @db.Timestamp(6)
+  created_at        DateTime?          @default(now()) @db.Timestamp(6)
+  notification      notification?      @relation(fields: [notification_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  push_subscription push_subscription? @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model push_subscription {
+  id                        String                      @id @db.VarChar(36)
+  user_id                   String?                     @db.VarChar(36)
+  endpoint                  String                      @unique
+  p256dh                    String
+  auth                      String
+  user_agent                String?                     @db.VarChar(500)
+  is_active                 Boolean?                    @default(true)
+  created_at                DateTime?                   @default(now()) @db.Timestamp(6)
+  last_used_at              DateTime?                   @default(now()) @db.Timestamp(6)
+  notification_delivery_log notification_delivery_log[]
+  user                      user?                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model session {
+  id            String    @id @db.VarChar(36)
+  session_token String?   @unique @db.VarChar(255)
+  user_id       String?   @db.VarChar(36)
+  expires       DateTime? @db.Timestamp(6)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  user          user?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model task {
+  id           String         @id @db.VarChar(36)
+  title        String         @db.VarChar(255)
+  description  String?
+  due_date     DateTime?      @db.Timestamp(6)
+  quadrant     String?        @default("B") @db.VarChar(2)
+  position     Int?           @default(0)
+  completed    Boolean?       @default(false)
+  completed_at DateTime?      @db.Timestamp(6)
+  user_id      String?        @db.VarChar(36)
+  category_id  String?        @db.VarChar(36)
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamp(6)
+  notification notification[]
+  category     category?      @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  user         user?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user {
+  id                       String              @id @db.VarChar(36)
+  name                     String?             @db.VarChar(255)
+  email                    String              @unique @db.VarChar(255)
+  email_verified           DateTime?           @db.Timestamp(6)
+  image                    String?             @db.VarChar(500)
+  notification_enabled     Boolean?            @default(true)
+  notification_time_before Int?                @default(24)
+  created_at               DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at               DateTime?           @default(now()) @db.Timestamp(6)
+  account                  account[]
+  category                 category[]
+  push_subscription        push_subscription[]
+  session                  session[]
+  task                     task[]
+}
