@@ -1,18 +1,26 @@
+// src/app/api/categories/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-const USER_ID_TEMPORAL = 'tu_user_id_temporal'; // ⚠️ REEMPLAZAR en SPRINT 2 con NextAuth
+import { auth } from '@/lib/auth'; // <-- Importación del helper de autenticación
 
 // Manejador para GET: Obtener todas las categorías
 export async function GET() {
+  const session = await auth(); 
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const userId = session.user.id;
+
   try {
     const categories = await prisma.category.findMany({
       where: {
-        user_id: USER_ID_TEMPORAL,
+        user_id: userId, // <-- Filtrar por el ID del usuario autenticado
       },
       orderBy: { name: 'asc' },
     });
-
+    
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -20,8 +28,16 @@ export async function GET() {
   }
 }
 
-// Manejador para POST: Crear una nueva categoría
+// Manejador para POST: Crear una nueva categoría (RF3)
 export async function POST(req: NextRequest) {
+  const session = await auth(); 
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const userId = session.user.id;
+
   try {
     const body = await req.json();
     const { name, color } = body;
@@ -34,7 +50,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         color: color || undefined,
-        user_id: USER_ID_TEMPORAL, // Asignación temporal
+        user_id: userId, // <-- Asignar el ID del usuario autenticado
       },
     });
 
