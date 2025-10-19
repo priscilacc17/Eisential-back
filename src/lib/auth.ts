@@ -1,13 +1,13 @@
-import NextAuth, { type NextAuthOptions } from 'next-auth';
+import { type NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import { prisma } from '@/lib/prisma'; 
+// import { PrismaAdapter } from '@auth/prisma-adapter';
+// import { prisma } from '@/lib/prisma';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma), 
+  // adapter: PrismaAdapter(prisma), // TODO: Descomentar cuando BD esté configurada
   
-  // Proveedores de Autenticación
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -21,27 +21,37 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
 
-callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.id = user.id;
-    }
-    return token;
-  },
+  callbacks: {
+    async redirect({ url, baseUrl }) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith(frontendUrl)) return url;
+      
+      return `${frontendUrl}/dashboard`;
+    },
 
-  // Este callback controla qué datos se envían al cliente en la sesión
-  async session({ session, token }) {
-    if (session.user && token.id) {
-      session.user.email = token.id as string;
-    }
-    return session;
-  },
-},
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+      }
+      return token;
+    },
 
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
+  },
 
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export const { handlers, auth } = NextAuth(authOptions);
+export const getSession = () => getServerSession(authOptions);

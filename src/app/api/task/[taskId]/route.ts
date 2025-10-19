@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
 
 interface Params {
   params: { taskId: string };
@@ -9,14 +9,14 @@ interface Params {
 // Para verificar si la tarea pertenece al usuario
 async function checkTaskOwnership(taskId: string, userId: string) {
     const task = await prisma.task.findUnique({
-        where: { id: taskId, user_id: userId },
+        where: { id: taskId, userId: userId },
     });
     return task;
 }
 
 // Actualizar tarea (incluye mover en matriz - RF5)
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // Eliminar tarea (CRUD)
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
