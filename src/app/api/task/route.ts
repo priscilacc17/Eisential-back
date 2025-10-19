@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
 
 // Obtener todas las tareas (Backlog)
 export async function GET() {
-  const session = await auth(); // Obtener esión
+  const session = await getSession(); // Obtener sesión
   
   if (!session?.user?.id) { // Verificar sesión
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -30,7 +30,7 @@ export async function GET() {
 
 // Crear una nueva tarea (RF2)
 export async function POST(req: NextRequest) {
-  const session = await auth(); // Obtener sesión
+  const session = await getSession(); // Obtener sesión
   
   if (!session?.user?.id) { // Verificar sesión
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
